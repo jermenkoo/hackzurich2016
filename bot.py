@@ -3,6 +3,7 @@ import time
 import tweepy
 
 from reporter import *
+from translator import translate
 
 CONSUMER_KEY = "5yldnPCK8iE4k0RXicumhkmat"
 CONSUMER_SECRET_KEY = "vbiNEWWvpDWIDK0ibHAiGrXTrpObtyWcBzE5aMR2EptLwNTbXy"
@@ -17,35 +18,37 @@ result = dangerous()
 
 while True:
 	for danger in result:
-		if not danger:
-			continue
-		else:
+		if danger:
 			for crap in danger:
 				try:
 					_, *rest = crap
-					print("[*] trying to update status...")
+					print("[*] parsing maximum speeds...")
 					lat, lon, _ = map(float, rest)
 
 					URL = "http://www.overpass-api.de/api/xapi?*[maxspeed=*][bbox={},{},{},{}]"
-					URL = URL.format(lon, lat, lon + 0.01, lat + 0.01)
+					URL = URL.format(lon, lat, lon + 0.005, lat + 0.005)
 
-					resp = r.get(URL).text
+					try:
+						resp = r.get(URL).text
+					except:
+						pass
 
 					try:
 						speed = int(resp.split('k="maxspeed" v=')[1].split("/>")[0][1:-1])
 					except Exception:
 						speed = 50
 
-					# print(rest, "spd", int(speed))
+					rest = list(map(float, rest))
 
-					status = "Dangerous driving detected: {}!".format(rest)
+					status = "Dangerous driving detected: coord: {} {} spd: {} km/h!".format(*rest)
 					if rest[-1] > speed:
-						status += " Speed exceeded by: {}".format(rest[-1] - speed)
+						status += " Speed exceeded by: {} km/h!".format(round(rest[-1] - speed, 2))
 
-					api.update_status(status)
-					time.sleep(5)
-				except Exception as e:
-					print("[!] Exception has occured, trying again in 5 seconds!")
-					print(e)
-					time.sleep(5)
-					continue
+					status = translate(status)
+
+					print("[*] trying to update status...")
+					api.update_status(status.replace(',', '.'))
+					exit()
+				except Exception:
+					print("[!] Exception has occured! Sleeping for 5 seconds!")
+				time.sleep(5)

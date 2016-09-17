@@ -20,8 +20,7 @@ def my_amazing_function():
 					print("[*] parsing {}".format(filename))
 					reader = csv.DictReader(csvfile)
 					
-					rows = [row for row in reader]
-					rows = list(filter(lambda row: row['Field'] == 'GPS_SPEED', rows))
+					rows = [row for row in reader if row['Field'] == 'GPS_SPEED']
 					
 					triples = [tuple(entry[key] for key in KEYS) for entry in rows]
 					triples = [(dt, lat, lon, knots_to_kmh(spd)) for (dt, lat, lon, spd) in triples]
