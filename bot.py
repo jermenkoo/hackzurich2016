@@ -1,3 +1,4 @@
+import requests as r
 import time
 import tweepy
 
@@ -23,7 +24,25 @@ while True:
 				try:
 					_, *rest = crap
 					print("[*] trying to update status...")
-					api.update_status("Dangerous driving detected: {}!".format(rest))
+					lat, lon, _ = map(float, rest)
+
+					URL = "http://www.overpass-api.de/api/xapi?*[maxspeed=*][bbox={},{},{},{}]"
+					URL = URL.format(lon, lat, lon + 0.01, lat + 0.01)
+
+					resp = r.get(URL).text
+
+					try:
+						speed = int(resp.split('k="maxspeed" v=')[1].split("/>")[0][1:-1])
+					except Exception:
+						speed = 50
+
+					# print(rest, "spd", int(speed))
+
+					status = "Dangerous driving detected: {}!".format(rest)
+					if rest[-1] > speed:
+						status += " Speed exceeded by: {}".format(rest[-1] - speed)
+
+					api.update_status(status)
 					time.sleep(5)
 				except Exception as e:
 					print("[!] Exception has occured, trying again in 5 seconds!")
